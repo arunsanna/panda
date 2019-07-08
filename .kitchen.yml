@@ -1,20 +1,51 @@
 ---
 driver:
-  name: vagrant
+  name: ec2
+  region: <%= ENV['AWS_REGION'] %>
+  subnet_id: <%= ENV['SUBNET_ID'] %>
+  security_group_ids: <%= ENV['SG_ID'].split(',') %>
+  aws_ssh_key_id: <%= ENV['SSH_KEY'] %>
+  iam_profile_name: <%= ENV['IAM_PROFILE'] %>
+  associate_public_ip: <%= ENV['PUBLIC_IP'] %>
+  tags:
+    Name: REAN-jenkins
+    Owner: <%= ENV['TAGS_OWNER'] %>
+    Environment: <%= ENV['TAGS_ENVIRONMENT'] %>
+    Project: <%= ENV['TAGS_PROJECT'] %>
+    ExpirationDate: "<%= ENV['TAGS_EXPIRY'] %>"
+    BuildUrl: "<%= ENV['TAGS_BUILDURL'] %>"
+    Product: "<%= ENV['TAGS_PRODUCT'] %>"
 
 provisioner:
   name: chef_zero
-  # You may wish to disable always updating cookbooks in CI or other testing environments.
-  # For example:
-  #   always_update_cookbooks: <%= !ENV['CI'] %>
-  always_update_cookbooks: true
+  product_name: chefdk
+  download_url: <%= "https://#{ENV['ARTIFACTORY_DOMAIN_NAME']}/artifactory/virtual-misc/chefdk/3.8.14-1/chefdk-3.8.14-1.el7.x86_64.rpm" %>
+  client_rb:
+    rubygems_url: <%= "https://#{ENV['ARTIFACTORY_USERNAME']}:#{ENV['ARTIFACTORY_API_KEY']}@#{ENV['ARTIFACTORY_DOMAIN_NAME']}/artifactory/api/gems/virtual-rubygems/" %>
+
+transport:
+  name: rsync
+  ssh_key: <%= ENV['SSH_KEY_PATH'].split(',') %>
+  ssh_gateway: <%= ENV['BASTION_HOST'] %>
+  ssh_gateway_username: ec2-user
 
 verifier:
   name: inspec
 
 platforms:
-  - name: ubuntu-16.04
-  - name: centos-7
+  - name: rhel-7
+    driver:
+      instance_type: t2.medium
+      image_id: <%= ENV['REAN_BASEOS_RHEL_7_AMI'] %>
+    transport:
+      username: ec2-user
+    block_device_mappings:
+      - device_name: /dev/sdb
+        ebs:
+        volume_type: gp2
+        virtual_name: test
+        volume_size: 50
+        delete_on_termination: true
 
 suites:
   - name: default
