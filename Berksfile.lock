@@ -1,0 +1,7 @@
+DEPENDENCIES
+  panda
+    path: .
+    metadata: true
+
+GRAPH
+  panda (0.1.0)
